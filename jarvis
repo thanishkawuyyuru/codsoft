@@ -1,0 +1,205 @@
+import speech_recognition as sr
+import pyttsx3
+import datetime
+import wikipedia
+import webbrowser
+import os
+import time
+import subprocess
+from ecapture import ecapture as ec
+import requests
+from bs4 import BeautifulSoup
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+
+# Initialize the speech engine
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
+
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+def wishMe():
+    hour = datetime.datetime.now().hour
+    if 0 <= hour < 12:
+        speak("Hello, Good Morning")
+        print("Hello, Good Morning")
+    elif 12 <= hour < 18:
+        speak("Hello, Good Afternoon")
+        print("Hello, Good Afternoon")
+    else:
+        speak("Hello, Good Evening")
+        print("Hello, Good Evening")
+
+
+def takeCommand(language='en-in'):
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        audio = r.listen(source)
+        try:
+            statement = r.recognize_google(audio, language=language)
+            print(f"user said: {statement}\n")
+            return statement.lower()  # Return the statement in lowercase
+        except Exception as e:
+            speak("Pardon me, please say that again")
+            return "None"
+
+
+def get_weather(city):
+    url = f"https://www.weather.com/en-IN/weather/today/l/{city}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    try:
+        temperature = soup.find('div', class_='TodayDetailsCard--feelsLikeTempValue--2aogo').text
+        condition = soup.find('div', class_='CurrentConditions--phraseValue--17s79').text
+        return temperature, condition
+    except AttributeError:
+        return None, None
+
+
+def open_application(application_name):
+    try:
+        subprocess.Popen(application_name)
+        speak(f"{application_name} is opened.")
+    except Exception as e:
+        print(e)
+        speak(f"Sorry, I couldn't open {application_name}.")
+
+
+def play_song_on_spotify(song_name):
+    speak(f"Searching for {song_name} on Spotify.")
+
+    # Spotify API credentials
+    client_id = "3ce156e46ff44ed2aeed6471f441dd7f"
+    client_secret = "a8a059877b0d4d3ab0cd6e24257d2ae5"
+
+    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=client_id, client_secret=client_secret))
+
+    results = sp.search(q=song_name, type='track', limit=1)
+    if results['tracks']['items']:
+        track_url = results['tracks']['items'][0]['external_urls']['spotify']
+        try:
+            os.system(f"start {track_url}")
+            speak(f"Playing {song_name} on Spotify.")
+            return True
+        except Exception as e:
+            print(e)
+            speak("Sorry, I couldn't open Spotify.")
+            return False
+    else:
+        speak("I couldn't find the song on Spotify.")
+        return False
+
+
+def ask_for_song():
+    speak("Which song would you like to hear?")
+    song_name = takeCommand()
+    return song_name
+
+
+if __name__ == '__main__':
+    print("Loading your AI personal assistant Jarvis")
+    speak("Loading your AI personal assistant Jarvis")
+    wishMe()
+
+    while True:
+        speak("Tell me how can I help you now?")
+        statement = takeCommand()
+        if statement == "None":
+            continue
+
+        if "good bye" in statement or "ok bye" in statement or "stop" in statement:
+            speak('your personal assistant Jarvis is shutting down, Good bye')
+            print('your personal assistant Jarvis is shutting down, Good bye')
+            break
+
+        if 'wikipedia' in statement:
+            speak('Searching Wikipedia...')
+            statement = statement.replace("wikipedia", "")
+            results = wikipedia.summary(statement, sentences=3)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+
+        elif 'open youtube' in statement:
+            webbrowser.open_new_tab("https://www.youtube.com")
+            speak("YouTube is open now")
+            time.sleep(5)
+
+        elif 'open google' in statement:
+            webbrowser.open_new_tab("https://www.google.com")
+            speak("Google Chrome is open now")
+            time.sleep(5)
+
+        elif 'open gmail' in statement:
+            webbrowser.open_new_tab("https://www.gmail.com")
+            speak("Google Mail is open now")
+            time.sleep(5)
+
+        elif 'time' in statement:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"The time is {strTime}")
+
+        elif 'news' in statement:
+            news = webbrowser.open_new_tab("https://timesofindia.indiatimes.com/home/headlines")
+            speak('Here are some headlines from the Times of India, Happy reading')
+            time.sleep(6)
+
+        elif "camera" in statement or "take a photo" in statement:
+            ec.capture(0, "easy camera", "img.jpg")
+
+        elif 'search' in statement:
+            statement = statement.replace("search", "")
+            webbrowser.open_new_tab(statement)
+            time.sleep(5)
+
+        elif "who are you" in statement or "what can you do" in statement:
+            speak(
+                'I am Jarvis, your personal assistant. I am programmed to perform minor tasks like opening YouTube, Google Chrome, Gmail and StackOverflow, predicting time, taking a photo, searching Wikipedia, predicting weather in different cities, getting top headlines from Times of India, and play your desired songs as well!')
+
+        elif "who made you" in statement or "who created you" in statement or "who discovered you" in statement:
+            speak("I am Jarvis, I was built by Thanishka")
+            print("I am Jarvis, I was built by Thanishka")
+
+        elif "weather" in statement:
+            speak("What is the city name?")
+            city_name = takeCommand()
+            if city_name != "None":  # Check if city_name is not "None"
+                temperature, condition = get_weather(city_name)
+                if temperature and condition:
+                    speak(f"The temperature is {temperature} and the weather condition is {condition}.")
+                    print(f"The temperature is {temperature} and the weather condition is {condition}.")
+                else:
+                    speak("Sorry, I couldn't fetch the weather information for that city.")
+            else:
+                speak("Sorry, I didn't catch that. Please try again.")
+
+        elif "open" in statement:
+            app_name = statement.split("open", 1)[1].strip()
+            open_application(app_name)
+
+        elif "play song" in statement:
+            speak("Which language would you like the song to be in? English, Tamil, or Telugu?")
+            language_choice = takeCommand()
+            if 'tamil' in language_choice:
+                song_name = takeCommand('ta-IN')
+            elif 'telugu' in language_choice:
+                song_name = takeCommand('te-IN')
+            else:
+                song_name = takeCommand('en-IN')
+
+            if song_name != "None":
+                if play_song_on_spotify(song_name):
+                    break  # Stop the assistant after the song starts playing
+
+        elif "log off" in statement or "sign out" in statement:
+            speak("Ok, your PC will log off in 10 seconds. Make sure you exit from all applications.")
+            subprocess.call(["shutdown", "/l"])
+            time.sleep(10)
