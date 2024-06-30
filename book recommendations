@@ -1,0 +1,45 @@
+# Predefined list of books with genres
+books = [
+    {"title": "The Hobbit", "author": "J.R.R. Tolkien", "genre": "Fantasy"},
+    {"title": "Harry Potter and the Sorcerer's Stone", "author": "J.K. Rowling", "genre": "Fantasy"},
+    {"title": "To Kill a Mockingbird", "author": "Harper Lee", "genre": "Fiction"},
+    {"title": "1984", "author": "George Orwell", "genre": "Dystopian"},
+    {"title": "Pride and Prejudice", "author": "Jane Austen", "genre": "Romance"},
+    {"title": "The Da Vinci Code", "author": "Dan Brown", "genre": "Thriller"},
+    {"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "genre": "Fiction"},
+    {"title": "The Catcher in the Rye", "author": "J.D. Salinger", "genre": "Fiction"},
+    {"title": "The Shining", "author": "Stephen King", "genre": "Horror"},
+    {"title": "The Name of the Wind", "author": "Patrick Rothfuss", "genre": "Fantasy"},
+]
+
+
+# Function to recommend books based on the user's desired genre
+def recommend_books_by_genre(desired_genre):
+    recommended_books = [book for book in books if book["genre"].lower() == desired_genre.lower()]
+    return recommended_books
+
+
+# Main function to interact with the user
+def main():
+    print("Welcome to the Book Recommendation System!")
+    print("Available genres: Fantasy, Fiction, Dystopian, Romance, Thriller, Horror")
+
+    while True:
+        desired_genre = input("Enter your desired genre (or 'exit' to quit): ").strip().lower()
+
+        if desired_genre == 'exit':
+            print("Thank you for using the Book Recommendation System. Goodbye!")
+            break
+
+        recommended_books = recommend_books_by_genre(desired_genre)
+
+        if recommended_books:
+            print(f"Books recommended for '{desired_genre}':")
+            for book in recommended_books:
+                print(f"- {book['title']} by {book['author']}")
+        else:
+            print(f"No books found for '{desired_genre}'. Please try another genre.")
+
+
+if __name__ == "__main__":
+    main()
